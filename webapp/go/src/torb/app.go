@@ -9,6 +9,8 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/exec"
 	"sort"
@@ -912,6 +914,10 @@ func main() {
 		}
 		return renderReportCSV(c, reports)
 	}, adminLoginRequired)
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	e.Start(":8080")
 }
