@@ -441,8 +441,16 @@ func getAPIUser(c echo.Context) error {
 	}
 
 	var totalPrice int
-	if err := db.QueryRow("SELECT IFNULL(SUM(e.price + s.price), 0) FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id INNER JOIN events e ON e.id = r.event_id WHERE r.user_id = ? AND r.canceled_at IS NULL", user.ID).Scan(&totalPrice); err != nil {
+	rows, err = db.Query("SELECT e.price AS e, s.price AS s FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id INNER JOIN events e ON e.id = r.event_id WHERE r.user_id = ? AND r.canceled_at IS NULL", user.ID)
+	if err != nil {
 		return err
+	}
+
+	for rows.Next() {
+		var e, s int
+		if err := rows.Scan(&e, &s); err != nil {
+			totalPrice += (e + s)
+		}
 	}
 
 	rows, err = db.Query("SELECT event_id FROM reservations WHERE user_id = ? GROUP BY event_id ORDER BY MAX(IFNULL(canceled_at, reserved_at)) DESC LIMIT 5", user.ID)
