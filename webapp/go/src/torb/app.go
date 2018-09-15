@@ -277,6 +277,12 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 	}
 
+	event.Total = 1000
+	event.Sheets["S"].Total = 50
+	event.Sheets["A"].Total = 150
+	event.Sheets["B"].Total = 300
+	event.Sheets["D"].Total = 500
+
 	return &event, nil
 }
 
