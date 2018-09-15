@@ -281,7 +281,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 	event.Sheets["S"].Total = 50
 	event.Sheets["A"].Total = 150
 	event.Sheets["B"].Total = 300
-	event.Sheets["D"].Total = 500
+	event.Sheets["C"].Total = 500
 
 	return &event, nil
 }
