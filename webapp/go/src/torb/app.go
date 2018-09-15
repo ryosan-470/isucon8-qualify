@@ -255,7 +255,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		var reservation Reservation
 		var rID sql.NullInt64
 		reservation.EventID = eventID
-		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price, &rID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt); err != nil {
+		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price, &rID, &reservation.UserID, &reservation.ReservedAt); err != nil {
 			return nil, err
 		}
 
