@@ -636,59 +636,63 @@ func deleteAPIReservation(c echo.Context) error {
 	rank := c.Param("rank")
 	num := c.Param("num")
 
-	user, err := getLoginUser(c)
-	if err != nil {
-		return err
-	}
+	go func() error {
+		user, err := getLoginUser(c)
+		if err != nil {
+			return err
+		}
 
-	event, err := getEvent(eventID, user.ID)
-	if err != nil {
-		if err == sql.ErrNoRows {
+		event, err := getEvent(eventID, user.ID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return resError(c, "invalid_event", 404)
+			}
+			return err
+		} else if !event.PublicFg {
 			return resError(c, "invalid_event", 404)
 		}
-		return err
-	} else if !event.PublicFg {
-		return resError(c, "invalid_event", 404)
-	}
 
-	if !validateRank(rank) {
-		return resError(c, "invalid_rank", 404)
-	}
-
-	var sheet Sheet
-	if err := db.QueryRow("SELECT * FROM sheets WHERE `rank` = ? AND num = ?", rank, num).Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
-		if err == sql.ErrNoRows {
-			return resError(c, "invalid_sheet", 404)
+		if !validateRank(rank) {
+			return resError(c, "invalid_rank", 404)
 		}
-		return err
-	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-
-	var reservation Reservation
-	if err := tx.QueryRow("SELECT * FROM reservations WHERE event_id = ? AND sheet_id = ? AND canceled_at IS NULL GROUP BY event_id HAVING reserved_at = MIN(reserved_at) FOR UPDATE", event.ID, sheet.ID).Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt); err != nil {
-		tx.Rollback()
-		if err == sql.ErrNoRows {
-			return resError(c, "not_reserved", 400)
+		var sheet Sheet
+		if err := db.QueryRow("SELECT * FROM sheets WHERE `rank` = ? AND num = ?", rank, num).Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
+			if err == sql.ErrNoRows {
+				return resError(c, "invalid_sheet", 404)
+			}
+			return err
 		}
-		return err
-	}
-	if reservation.UserID != user.ID {
-		tx.Rollback()
-		return resError(c, "not_permitted", 403)
-	}
 
-	if _, err := tx.Exec("UPDATE reservations SET canceled_at = ? WHERE id = ?", time.Now().UTC().Format("2006-01-02 15:04:05.000000"), reservation.ID); err != nil {
-		tx.Rollback()
-		return err
-	}
+		tx, err := db.Begin()
+		if err != nil {
+			return err
+		}
 
-	if err := tx.Commit(); err != nil {
-		return err
-	}
+		var reservation Reservation
+		if err := tx.QueryRow("SELECT * FROM reservations WHERE event_id = ? AND sheet_id = ? AND canceled_at IS NULL GROUP BY event_id HAVING reserved_at = MIN(reserved_at) FOR UPDATE", event.ID, sheet.ID).Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt); err != nil {
+			tx.Rollback()
+			if err == sql.ErrNoRows {
+				return resError(c, "not_reserved", 400)
+			}
+			return err
+		}
+		if reservation.UserID != user.ID {
+			tx.Rollback()
+			return resError(c, "not_permitted", 403)
+		}
+
+		if _, err := tx.Exec("UPDATE reservations SET canceled_at = ? WHERE id = ?", time.Now().UTC().Format("2006-01-02 15:04:05.000000"), reservation.ID); err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+
+		return nil
+	}()
 
 	return c.NoContent(204)
 }
