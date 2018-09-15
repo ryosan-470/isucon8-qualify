@@ -942,7 +942,6 @@ func main() {
 	}
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{Output: os.Stderr}))
-	e.Static("/", "public")
 	e.GET("/", getRoot, fillinUser)
 	e.GET("/initialize", getInitialize)
 	e.POST("/api/users", getAPIUsers)
