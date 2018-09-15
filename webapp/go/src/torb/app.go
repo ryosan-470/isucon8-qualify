@@ -9,8 +9,6 @@ import (
 	"html/template"
 	"io"
 	"log"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"os/exec"
 	"runtime"
@@ -990,10 +988,6 @@ func main() {
 	e.POST("/admin/api/events/:id/actions/edit", postAdminEditEvent, adminLoginRequired)
 	e.GET("/admin/api/reports/events/:id/sales", getAdminEventSalse, adminLoginRequired)
 	e.GET("/admin/api/reports/sales", getAdminSalse, adminLoginRequired)
-
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
 
 	e.Start(":8080")
 }
