@@ -13,6 +13,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/exec"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -916,6 +917,7 @@ func getAdminSalse(c echo.Context) error {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4",
 		os.Getenv("DB_USER"), os.Getenv("DB_PASS"),
 		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"),
