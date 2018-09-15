@@ -223,6 +223,14 @@ func getEvents(all bool) ([]*Event, error) {
 	return events, nil
 }
 
+func getEventInfo(eventID int64) (*Event, error) {
+	var event Event
+	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+		return nil, err
+	}
+	return &event, nil
+}
+
 func getEvent(eventID, loginUserID int64) (*Event, error) {
 	var event Event
 	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
@@ -555,7 +563,7 @@ func getAPIReserveEvent(c echo.Context) error {
 		return err
 	}
 
-	event, err := getEvent(eventID, user.ID)
+	event, err := getEventInfo(eventID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return resError(c, "invalid_event", 404)
