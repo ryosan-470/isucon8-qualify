@@ -528,10 +528,15 @@ func getAPIEvents(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	for i, v := range events {
-		events[i] = sanitizeEvent(v)
-	}
-	return c.JSON(200, events)
+	results := make(chan Event, len(events))
+	go func() {
+		defer close(result)
+		for i, v := range events {
+			results <- sanitizeEvent(v)
+		}
+	}()
+
+	return c.JSON(200, results)
 }
 
 func getAPIEvent(c echo.Context) error {
