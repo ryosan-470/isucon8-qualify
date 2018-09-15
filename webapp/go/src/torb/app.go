@@ -259,6 +259,10 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 			return nil, err
 		}
 
+		event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
+		event.Total++
+		event.Sheets[sheet.Rank].Total++
+
 		if rID.Valid {
 			// sheet is reserved
 			sheet.Mine = reservation.UserID == loginUserID
