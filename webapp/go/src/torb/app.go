@@ -244,12 +244,15 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		"C": &Sheets{},
 	}
 
-	rows, err := db.Query("SELECT S.id, S.rank, S.num, S.price, R.id, R.user_id, R.reserved_at FROM (SELECT * FROM sheets ORDER BY `rank`, num) as S LEFT OUTER JOIN (select * from reservations WHERE event_id = ? AND canceled_at IS NULL GROUP BY event_id, sheet_id) as R ON R.sheet_id = S.id", eventID)
+	rows, err := db.Query("SELECT S.id, S.rank, S.num, S.price, R.id, R.user_id, R.reserved_at from sheets as S LEFT OUTER JOIN (select * from reservations WHERE event_id = ? AND canceled_at IS NULL) as R ON R.sheet_id = S.id", eventID)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
 	defer rows.Close()
+
+	var prev int64
+	prev = -1
 
 	for rows.Next() {
 		var sheet Sheet
@@ -259,6 +262,11 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price, &rID, &rUserID, &rReservedAt); err != nil {
 			return nil, err
 		}
+
+		if sheet.ID == prev {
+			continue
+		}
+		prev = sheet.ID
 
 		event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
 		event.Total++
@@ -277,11 +285,11 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 	}
 
-	event.Total = 1000
-	event.Sheets["S"].Total = 50
-	event.Sheets["A"].Total = 150
-	event.Sheets["B"].Total = 300
-	event.Sheets["C"].Total = 500
+	// event.Total = 1000
+	// event.Sheets["S"].Total = 50
+	// event.Sheets["A"].Total = 150
+	// event.Sheets["B"].Total = 300
+	// event.Sheets["C"].Total = 500
 
 	return &event, nil
 }
